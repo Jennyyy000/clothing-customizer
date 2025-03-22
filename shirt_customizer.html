@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clothing Customizer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.2.4/fabric.min.js"></script>
+    <style>
+        body { text-align: center; font-family: Arial, sans-serif; }
+        .canvas-container { border: 1px solid #ccc; display: inline-block; margin-top: 20px; background: white; }
+        .controls { margin-top: 10px; }
+        select, button, input { margin: 5px; }
+    </style>
+</head>
+<body>
+    <h2>Customize Your Clothing</h2>
+    
+    <label>Choose Clothing Type:</label>
+    <select id="clothingType">
+        <option value="tshirt">T-Shirt</option>
+        <option value="vneck">V-Neck</option>
+        <option value="sleeveless">Sleeveless</option>
+        <option value="polo">Polo T-Shirt</option>
+        <option value="longsleeve">Long Sleeve</option>
+        <option value="jersey">Jersey</option>
+        <option value="jacket">Jacket</option>
+    </select>
+    
+    <label>View:</label>
+    <select id="viewType">
+        <option value="front">Front</option>
+        <option value="back">Back</option>
+    </select>
+    
+    <br><br>
+    <label>Choose Color:</label>
+    <input type="color" id="colorPicker" value="#ffffff">
+    
+    <br><br>
+    <canvas id="clothingCanvas" width="600" height="600"></canvas>
+    
+    <div class="controls">
+        <input type="file" id="uploadImage" accept="image/*">
+        <button onclick="deleteSelectedObject()">Delete Selected</button>
+        <button onclick="downloadDesign()">Download Design</button>
+    </div>
+
+    <script>
+        var canvas = new fabric.Canvas('clothingCanvas');
+        var clothingImages = {
+            tshirt: { front: 'https://i.imgur.com/y1XrE4d.png', back: 'https://i.imgur.com/uGKj4BK.png' },
+            vneck: { front: 'https://i.imgur.com/K0Gao8K.png', back: 'https://i.imgur.com/O6ItMGJ.png' },
+            sleeveless: { front: 'https://i.imgur.com/jYqYDOc.png', back: 'https://i.imgur.com/Q3xSEX4.png' },
+            polo: { front: 'https://i.imgur.com/EOR7y7o.png', back: 'https://i.imgur.com/hJkinVS.png' },
+            longsleeve: { front: 'https://i.imgur.com/6na6pL0.png', back: 'https://i.imgur.com/plLiQPU.png' },
+            jersey: { front: 'https://i.imgur.com/ssBwczx.png', back: 'https://i.imgur.com/nvYI19M.png' },
+            jacket: { front: 'https://i.imgur.com/36SoIpS.png', back: 'https://i.imgur.com/jr9gd6A.png' }
+        };
+        
+        var shirt, colorOverlay;
+        
+        function loadClothing(type, view) {
+            canvas.clear();
+            if (clothingImages[type] && clothingImages[type][view]) {
+                fabric.Image.fromURL(clothingImages[type][view], function(img) {
+                    img.scaleToWidth(canvas.width * 0.8);
+                    img.scaleToHeight(canvas.height * 0.8);
+                    img.set({ left: canvas.width * 0.1, top: canvas.height * 0.1 });
+                    img.selectable = false;
+                    shirt = img;
+                    canvas.add(img);
+                    canvas.sendToBack(img);
+                    addColorOverlay();
+                });
+            }
+        }
+
+        function addColorOverlay() {
+            if (colorOverlay) {
+                canvas.remove(colorOverlay);
+            }
+            colorOverlay = new fabric.Rect({
+                width: canvas.width * 0.8,
+                height: canvas.height * 0.8,
+                left: canvas.width * 0.1,
+                top: canvas.height * 0.1,
+                fill: document.getElementById('colorPicker').value,
+                opacity: 0.6,
+                selectable: false,
+                globalCompositeOperation: 'multiply' // Ensures only clothing changes color
+            });
+            canvas.add(colorOverlay);
+            canvas.moveTo(colorOverlay, 1);
+        }
+
+        document.getElementById('clothingType').addEventListener('change', function() {
+            loadClothing(this.value, document.getElementById('viewType').value);
+        });
+
+        document.getElementById('viewType').addEventListener('change', function() {
+            loadClothing(document.getElementById('clothingType').value, this.value);
+        });
+
+        document.getElementById('colorPicker').addEventListener('input', function() {
+            if (colorOverlay) {
+                colorOverlay.set('fill', this.value);
+                canvas.renderAll();
+            }
+        });
+
+        document.getElementById('uploadImage').addEventListener('change', function(e) {
+            var reader = new FileReader();
+            reader.onload = function(event) {
+                fabric.Image.fromURL(event.target.result, function(imgObj) {
+                    imgObj.scaleToWidth(150);
+                    imgObj.set({ left: 200, top: 200 });
+                    canvas.add(imgObj);
+                });
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        });
+
+        function deleteSelectedObject() {
+            var activeObject = canvas.getActiveObject();
+            if (activeObject) {
+                canvas.remove(activeObject);
+            }
+        }
+
+        function downloadDesign() {
+            var link = document.createElement('a');
+            link.href = canvas.toDataURL();
+            link.download = 'custom_clothing.png';
+            link.click();
+        }
+
+        loadClothing('tshirt', 'front');
+    </script>
+</body>
+</html>
