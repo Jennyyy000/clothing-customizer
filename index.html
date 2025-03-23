@@ -207,7 +207,7 @@
                 jersey: { front: 'https://i.imgur.com/ssBwczx.png', back: 'https://i.imgur.com/nvYI19M.png' }
             },
             pants: {
-                longpant: { front: 'https://i.imgur.com/6VBdpjS.png', back: 'https://i.imgur.com/jWw5RXQ.png' },
+                sportpant: { front: 'https://i.imgur.com/6VBdpjS.png', back: 'https://i.imgur.com/jWw5RXQ.png' },
                 shortpant: { front: 'https://i.imgur.com/d2zqHgb.png', back: 'https://i.imgur.com/mWD0bMY.png' }
             },
             others: {
@@ -219,110 +219,159 @@
 
         var currentColor = '#ff0000'; // Default color
         var currentImage = null;  // Keep track of the current image on the canvas
-        var overlay = null; // Keep track of the color overlay
+        var overlay = null; // Color overlay on the image
 
-        // Update clothing options based on selected category
+        // Update clothing category and type options based on user selection
         function updateCategory() {
             var category = document.getElementById('category').value;
             var clothingTypeSelect = document.getElementById('clothingType');
-            clothingTypeSelect.innerHTML = '';
-            for (var type in clothingImages[category]) {
-                var option = document.createElement('option');
-                option.value = type;
-                option.text = type.replace(/([A-Z])/g, ' $1').toUpperCase();
-                clothingTypeSelect.appendChild(option);
-            }
-            updateClothing();
+            var viewTypeSelect = document.getElementById('viewType');
+            var clothingTypes = Object.keys(clothingImages[category]);
+
+            clothingTypeSelect.innerHTML = clothingTypes.map(function(type) {
+                return `<option value="${type}">${type.charAt(0).toUpperCase() + type.slice(1)}</option>`;
+            }).join('');
+
+            updateClothing(); // Update clothing when category changes
         }
 
-        // Update the clothing based on selected category, type, and view
         function updateClothing() {
             var category = document.getElementById('category').value;
             var clothingType = document.getElementById('clothingType').value;
             var viewType = document.getElementById('viewType').value;
             var imgSrc = clothingImages[category][clothingType][viewType];
+            
+            if (currentImage) {
+                canvas.remove(currentImage); // Remove existing clothing image
+            }
 
             fabric.Image.fromURL(imgSrc, function(img) {
-                canvas.clear(); // Clear the canvas
-                img.set({ left: 100, top: 100, scaleX: 0.8, scaleY: 0.8, selectable: false, evented: false });
+                img.set({
+                    left: 0,
+                    top: 0,
+                    selectable: true,  // Make the clothing image movable
+                    evented: true  // Allow interaction
+                });
                 canvas.add(img);
-                currentImage = img;  // Store reference to current image
-                applyColor(); // Apply the selected color to the new image
+                currentImage = img;  // Store the current image reference
+                applyColor();  // Apply color overlay
             });
         }
 
-        // Apply color to the clothing using an overlay
+        // Apply color overlay
         function applyColor() {
-            currentColor = document.getElementById('colorPicker').value;
+            if (overlay) {
+                canvas.remove(overlay);
+            }
             if (currentImage) {
-                // Remove previous overlay if it exists
-                if (overlay) {
-                    canvas.remove(overlay);
-                }
-
-                // Create a new semi-transparent overlay with the selected color
                 overlay = new fabric.Rect({
                     left: currentImage.left,
                     top: currentImage.top,
                     width: currentImage.width * currentImage.scaleX,
                     height: currentImage.height * currentImage.scaleY,
                     fill: currentColor,
-                    opacity: 0.5,
+                    opacity: 0.3,
                     selectable: false,
                     evented: false
                 });
-
-                canvas.add(overlay);  // Add the overlay to the canvas
+                canvas.add(overlay);
             }
         }
 
-        // Add Text to Canvas
+        // Handle image upload and display on canvas
+        document.getElementById('uploadImage').addEventListener('change', function(event) {
+            var file = event.target.files[0];
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var dataUrl = e.target.result;
+
+                    // Load the image onto the fabric.js canvas
+                    fabric.Image.fromURL(dataUrl, function(img) {
+                        img.set({
+                            left: 100,
+                            top: 100,
+                            scaleX: 0.5,
+                            scaleY: 0.5,
+                            selectable: true, // Make it movable
+                            evented: true // Allow interaction
+                        });
+                        canvas.add(img);
+                        canvas.renderAll(); // Ensure the canvas is updated
+                    });
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Add text to canvas
         function addText() {
             var text = document.getElementById('textInput').value;
-            var fontSize = document.getElementById('fontSize').value;
-            var fontColor = document.getElementById('fontColor').value;
-            var fontStyle = document.getElementById('fontStyle').value;
-            var bold = document.getElementById('boldText').checked;
-            var italic = document.getElementById('italicText').checked;
+            if (text) {
+                var fontSize = parseInt(document.getElementById('fontSize').value, 10);
+                var fontColor = document.getElementById('fontColor').value;
+                var fontStyle = document.getElementById('fontStyle').value;
+                var isBold = document.getElementById('boldText').checked;
+                var isItalic = document.getElementById('italicText').checked;
 
-            var textObj = new fabric.Text(text, {
-                left: 100,
-                top: 200,
-                fontFamily: fontStyle,
-                fontSize: fontSize,
-                fill: fontColor,
-                fontWeight: bold ? 'bold' : '',
-                fontStyle: italic ? 'italic' : '',
-                selectable: true
-            });
-
-            canvas.add(textObj);
-        }
-
-        // Delete selected object (either image or text)
-        function deleteSelectedObject() {
-            var selectedObject = canvas.getActiveObject();
-            if (selectedObject) {
-                canvas.remove(selectedObject);
+                var newText = new fabric.Text(text, {
+                    left: 100,
+                    top: 200,
+                    fontFamily: fontStyle,
+                    fontSize: fontSize,
+                    fill: fontColor,
+                    fontWeight: isBold ? 'bold' : 'normal',
+                    fontStyle: isItalic ? 'italic' : 'normal'
+                });
+                canvas.add(newText);
             }
         }
 
-        // Download the design as an image
+        // Update text style on canvas
+        function updateTextStyle() {
+            var activeObject = canvas.getActiveObject();
+            if (activeObject && activeObject.type === 'text') {
+                var fontSize = parseInt(document.getElementById('fontSize').value, 10);
+                var fontColor = document.getElementById('fontColor').value;
+                var fontStyle = document.getElementById('fontStyle').value;
+                var isBold = document.getElementById('boldText').checked;
+                var isItalic = document.getElementById('italicText').checked;
+
+                activeObject.set({
+                    fontFamily: fontStyle,
+                    fontSize: fontSize,
+                    fill: fontColor,
+                    fontWeight: isBold ? 'bold' : 'normal',
+                    fontStyle: isItalic ? 'italic' : 'normal'
+                });
+
+                canvas.renderAll(); // Re-render the canvas
+            }
+        }
+
+        // Delete selected object
+        function deleteSelectedObject() {
+            var activeObject = canvas.getActiveObject();
+            if (activeObject) {
+                canvas.remove(activeObject);
+            }
+        }
+
+        // Download the design
         function downloadDesign() {
             var dataURL = canvas.toDataURL({
-                format: 'png',
-                multiplier: 2 // Optional: for higher resolution
+                format: 'png'
             });
             var link = document.createElement('a');
             link.href = dataURL;
             link.download = 'custom_design.png';
-            document.body.appendChild(link); // Append the link to the body temporarily
             link.click();
-            document.body.removeChild(link); // Remove the link after clicking
         }
 
-        // Initialize
-        updateCategory();
+        // Initialize the default category and clothing
+        window.onload = function() {
+            updateCategory();
+        };
     </script>
 </body>
 </html>
