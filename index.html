@@ -5,136 +5,323 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clothing Customizer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.2.4/fabric.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Roboto:wght@400;500&family=Noto+Sans+SC:wght@400;500&family=ZCOOL+QingKe+HuangYou&family=Ma+Shan+Zheng&family=Merriweather:wght@700&family=Open+Sans:wght@400;600&family=Pacifico&family=Dancing+Script:wght@700&family=Noto+Serif+SC:wght@400;700&family=Zhi+Mang+Xing&display=swap" rel="stylesheet">
     <style>
-        body { text-align: center; font-family: Arial, sans-serif; }
-        .canvas-container { border: 1px solid #ccc; display: inline-block; margin-top: 20px; background: white; }
-        .controls { margin-top: 10px; }
-        select, button, input { margin: 5px; }
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-image: url('https://imgur.com/kBJ7HW9.jpg');
+            background-size: cover;
+            background-position: center;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 1200px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        .controls label {
+            font-weight: 500;
+            color: #fff;
+            font-size: 1rem;
+        }
+        .controls select, .controls input, .controls button {
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            font-family: 'Roboto', sans-serif;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        .controls select:hover, .controls input:hover, .controls button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        .controls button {
+            background: #ff6f61;
+            color: #fff;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .controls button:hover {
+            background: #ff4a3d;
+        }
+        .canvas-container {
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            margin-top: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            display: inline-block;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+        }
+        .file-upload {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+        .file-upload input[type="file"] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .file-upload label {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #ff6f61;
+            color: #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            font-weight: 500;
+        }
+        .file-upload label:hover {
+            background: #ff4a3d;
+        }
+        /* Fix dropdown font visibility */
+        .controls select option {
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+        }
     </style>
 </head>
 <body>
-    <h2>Customize Your Clothing</h2>
-    
-    <label>Choose Clothing Type:</label>
-    <select id="clothingType">
-        <option value="tshirt">T-Shirt</option>
-        <option value="vneck">V-Neck</option>
-        <option value="sleeveless">Sleeveless</option>
-        <option value="polo">Polo T-Shirt</option>
-        <option value="longsleeve">Long Sleeve</option>
-        <option value="jersey">Jersey</option>
-        <option value="jacket">Jacket</option>
-    </select>
-    
-    <label>View:</label>
-    <select id="viewType">
-        <option value="front">Front</option>
-        <option value="back">Back</option>
-    </select>
-    
-    <br><br>
-    <label>Choose Color:</label>
-    <input type="color" id="colorPicker" value="#ffffff">
-    
-    <br><br>
-    <canvas id="clothingCanvas" width="600" height="600"></canvas>
-    
-    <div class="controls">
-        <input type="file" id="uploadImage" accept="image/*">
-        <button onclick="deleteSelectedObject()">Delete Selected</button>
-        <button onclick="downloadDesign()">Download Design</button>
+    <div class="container">
+        <h2>Customize Your Clothing</h2>
+
+        <div class="controls">
+            <label>Choose Category:</label>
+            <select id="category" onchange="updateCategory()">
+                <option value="tops">Tops</option>
+                <option value="pants">Pants</option>
+                <option value="others">Others</option>
+            </select>
+            
+            <label>Choose Clothing Type:</label>
+            <select id="clothingType" onchange="updateClothing()"></select>
+
+            <label>View:</label>
+            <select id="viewType" onchange="updateClothing()">
+                <option value="front">Front</option>
+                <option value="back">Back</option>
+            </select>
+            
+            <label>Choose Color:</label>
+            <input type="color" id="colorPicker" value="#ff0000" onchange="applyColor()">
+            
+            <div class="file-upload">
+                <label for="uploadImage">Upload Image</label>
+                <input type="file" id="uploadImage" accept="image/*">
+            </div>
+            <button onclick="deleteSelectedObject()">Delete Selected</button>
+            <button onclick="downloadDesign()">Download Design</button>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="clothingCanvas" width="600" height="600"></canvas>
+        </div>
+
+        <div class="controls">
+            <label>Add Text:</label>
+            <input type="text" id="textInput" placeholder="Enter text">
+            <button onclick="addText()">Add Text</button>
+            <br>
+            <label>Font Size:</label>
+            <input type="number" id="fontSize" value="20" min="10" max="100">
+            <label>Font Color:</label>
+            <input type="color" id="fontColor" value="#000000">
+            <label>Font Style:</label>
+            <select id="fontStyle">
+                <!-- Latin-based fonts -->
+                <option value="Arial">Arial</option>
+                <option value="Courier New">Courier New</option>
+                <option value="Georgia">Georgia</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Verdana">Verdana</option>
+                <option value="Playfair Display">Playfair Display</option>
+                <option value="Roboto">Roboto</option>
+                <option value="Merriweather">Merriweather</option>
+                <option value="Open Sans">Open Sans</option>
+                <option value="Pacifico">Pacifico</option>
+                <option value="Dancing Script">Dancing Script</option>
+                <!-- CJK fonts for Mandarin -->
+                <option value="Noto Sans SC">Noto Sans SC (简体中文)</option>
+                <option value="Noto Serif SC">Noto Serif SC (简体中文)</option>
+                <option value="ZCOOL QingKe HuangYou">ZCOOL QingKe HuangYou (简体中文)</option>
+                <option value="Ma Shan Zheng">Ma Shan Zheng (手写体)</option>
+                <option value="Zhi Mang Xing">Zhi Mang Xing (手写体)</option>
+            </select>
+            <label>Bold:</label>
+            <input type="checkbox" id="boldText">
+            <label>Italic:</label>
+            <input type="checkbox" id="italicText">
+            <button onclick="updateTextStyle()">Update Text</button>
+        </div>
     </div>
 
     <script>
-        var canvas = new fabric.Canvas('clothingCanvas');
+        var canvas = new fabric.Canvas('clothingCanvas', { selection: true });
         var clothingImages = {
-            tshirt: { front: 'https://i.imgur.com/y1XrE4d.png', back: 'https://i.imgur.com/uGKj4BK.png' },
-            vneck: { front: 'https://i.imgur.com/K0Gao8K.png', back: 'https://i.imgur.com/O6ItMGJ.png' },
-            sleeveless: { front: 'https://i.imgur.com/jYqYDOc.png', back: 'https://i.imgur.com/Q3xSEX4.png' },
-            polo: { front: 'https://i.imgur.com/EOR7y7o.png', back: 'https://i.imgur.com/hJkinVS.png' },
-            longsleeve: { front: 'https://i.imgur.com/6na6pL0.png', back: 'https://i.imgur.com/plLiQPU.png' },
-            jersey: { front: 'https://i.imgur.com/ssBwczx.png', back: 'https://i.imgur.com/nvYI19M.png' },
-            jacket: { front: 'https://i.imgur.com/36SoIpS.png', back: 'https://i.imgur.com/jr9gd6A.png' }
+            tops: {
+                tshirt: { front: 'https://i.imgur.com/y1XrE4d.png', back: 'https://i.imgur.com/uGKj4BK.png' },
+                vneck: { front: 'https://i.imgur.com/K0Gao8K.png', back: 'https://i.imgur.com/O6ItMGJ.png' },
+                sleeveless: { front: 'https://i.imgur.com/jYqYDOc.png', back: 'https://i.imgur.com/Q3xSEX4.png' },
+                polo: { front: 'https://i.imgur.com/EOR7y7o.png', back: 'https://i.imgur.com/hJkinVS.png' },
+                longsleeve: { front: 'https://i.imgur.com/6na6pL0.png', back: 'https://i.imgur.com/plLiQPU.png' },
+                jersey: { front: 'https://i.imgur.com/ssBwczx.png', back: 'https://i.imgur.com/nvYI19M.png' }
+            },
+            pants: {
+                sportpant: { front: 'https://i.imgur.com/6VBdpjS.png', back: 'https://i.imgur.com/jWw5RXQ.png' },
+                shortpant: { front: 'https://i.imgur.com/d2zqHgb.png', back: 'https://i.imgur.com/mWD0bMY.png' }
+            },
+            others: {
+                apron: { front: 'https://i.imgur.com/3yjj3T1.png', back: 'https://i.imgur.com/3yjj3T1.png' },
+                pillowcase: { front: 'https://i.imgur.com/5Yz08aC.png', back: 'https://i.imgur.com/5Yz08aC.png' },
+                bedsheet: { front: 'https://i.imgur.com/Tamso0n.png', back: 'https://i.imgur.com/Tamso0n.png' }
+            }
         };
-        
-        var shirt, colorOverlay;
-        
-        function loadClothing(type, view) {
-            canvas.clear();
-            if (clothingImages[type] && clothingImages[type][view]) {
-                fabric.Image.fromURL(clothingImages[type][view], function(img) {
-                    img.scaleToWidth(canvas.width * 0.8);
-                    img.scaleToHeight(canvas.height * 0.8);
-                    img.set({ left: canvas.width * 0.1, top: canvas.height * 0.1 });
-                    img.selectable = false;
-                    shirt = img;
-                    canvas.add(img);
-                    canvas.sendToBack(img);
-                    addColorOverlay();
-                });
+
+        var currentColor = '#ff0000'; // Default color
+        var currentImage = null;  // Keep track of the current image on the canvas
+        var overlay = null; // Keep track of the color overlay
+
+        // Update clothing options based on selected category
+        function updateCategory() {
+            var category = document.getElementById('category').value;
+            var clothingTypeSelect = document.getElementById('clothingType');
+            clothingTypeSelect.innerHTML = '';
+            for (var type in clothingImages[category]) {
+                var option = document.createElement('option');
+                option.value = type;
+                option.text = type.replace(/([A-Z])/g, ' $1').toUpperCase();
+                clothingTypeSelect.appendChild(option);
             }
+            updateClothing();
         }
 
-        function addColorOverlay() {
-            if (colorOverlay) {
-                canvas.remove(colorOverlay);
-            }
-            colorOverlay = new fabric.Rect({
-                width: canvas.width * 0.8,
-                height: canvas.height * 0.8,
-                left: canvas.width * 0.1,
-                top: canvas.height * 0.1,
-                fill: document.getElementById('colorPicker').value,
-                opacity: 0.6,
-                selectable: false,
-                globalCompositeOperation: 'multiply' // Ensures only clothing changes color
+        // Update the clothing based on selected category, type, and view
+        function updateClothing() {
+            var category = document.getElementById('category').value;
+            var clothingType = document.getElementById('clothingType').value;
+            var viewType = document.getElementById('viewType').value;
+            var imgSrc = clothingImages[category][clothingType][viewType];
+
+            fabric.Image.fromURL(imgSrc, function(img) {
+                canvas.clear(); // Clear the canvas
+                img.set({ left: 100, top: 100, scaleX: 0.8, scaleY: 0.8, selectable: false, evented: false });
+                canvas.add(img);
+                currentImage = img;  // Store reference to current image
+                applyColor(); // Apply the selected color to the new image
             });
-            canvas.add(colorOverlay);
-            canvas.moveTo(colorOverlay, 1);
         }
 
-        document.getElementById('clothingType').addEventListener('change', function() {
-            loadClothing(this.value, document.getElementById('viewType').value);
-        });
+        // Apply color to the clothing using an overlay
+        function applyColor() {
+            currentColor = document.getElementById('colorPicker').value;
+            if (currentImage) {
+                // Remove previous overlay if it exists
+                if (overlay) {
+                    canvas.remove(overlay);
+                }
 
-        document.getElementById('viewType').addEventListener('change', function() {
-            loadClothing(document.getElementById('clothingType').value, this.value);
-        });
-
-        document.getElementById('colorPicker').addEventListener('input', function() {
-            if (colorOverlay) {
-                colorOverlay.set('fill', this.value);
-                canvas.renderAll();
-            }
-        });
-
-        document.getElementById('uploadImage').addEventListener('change', function(e) {
-            var reader = new FileReader();
-            reader.onload = function(event) {
-                fabric.Image.fromURL(event.target.result, function(imgObj) {
-                    imgObj.scaleToWidth(150);
-                    imgObj.set({ left: 200, top: 200 });
-                    canvas.add(imgObj);
+                // Create a new semi-transparent overlay with the selected color
+                overlay = new fabric.Rect({
+                    left: currentImage.left,
+                    top: currentImage.top,
+                    width: currentImage.width * currentImage.scaleX,
+                    height: currentImage.height * currentImage.scaleY,
+                    fill: currentColor,
+                    opacity: 0.5,
+                    selectable: false,
+                    evented: false
                 });
-            };
-            reader.readAsDataURL(e.target.files[0]);
-        });
 
-        function deleteSelectedObject() {
-            var activeObject = canvas.getActiveObject();
-            if (activeObject) {
-                canvas.remove(activeObject);
+                canvas.add(overlay);  // Add the overlay to the canvas
             }
         }
 
-        function downloadDesign() {
-            var link = document.createElement('a');
-            link.href = canvas.toDataURL();
-            link.download = 'custom_clothing.png';
-            link.click();
+        // Add Text to Canvas
+        function addText() {
+            var text = document.getElementById('textInput').value;
+            var fontSize = document.getElementById('fontSize').value;
+            var fontColor = document.getElementById('fontColor').value;
+            var fontStyle = document.getElementById('fontStyle').value;
+            var bold = document.getElementById('boldText').checked;
+            var italic = document.getElementById('italicText').checked;
+
+            var textObj = new fabric.Text(text, {
+                left: 100,
+                top: 200,
+                fontFamily: fontStyle,
+                fontSize: fontSize,
+                fill: fontColor,
+                fontWeight: bold ? 'bold' : '',
+                fontStyle: italic ? 'italic' : '',
+                selectable: true
+            });
+
+            canvas.add(textObj);
         }
 
-        loadClothing('tshirt', 'front');
+        // Delete selected object (either image or text)
+        function deleteSelectedObject() {
+            var selectedObject = canvas.getActiveObject();
+            if (selectedObject) {
+                canvas.remove(selectedObject);
+            }
+        }
+
+        // Download the design as an image
+        function downloadDesign() {
+            var dataURL = canvas.toDataURL({
+                format: 'png',
+                multiplier: 2 // Optional: for higher resolution
+            });
+            var link = document.createElement('a');
+            link.href = dataURL;
+            link.download = 'custom_design.png';
+            document.body.appendChild(link); // Append the link to the body temporarily
+            link.click();
+            document.body.removeChild(link); // Remove the link after clicking
+        }
+
+        // Initialize
+        updateCategory();
     </script>
 </body>
 </html>
